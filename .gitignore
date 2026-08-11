@@ -15,3 +15,6 @@ spec/
 # TypeScript build info
 *.tsbuildinfo
 **/*.tsbuildinfo
+
+# Static jobs cache (CI exports into public/ then builds dist/; not committed)
+public/jobs.json

@@ -58,7 +58,11 @@ npm run serve
 npm run dev
 ```
 
-Vite proxies `/api` to `http://localhost:3001`.
+Vite proxies `/api` to `http://localhost:3001`. In DEV the frontend fetches `/api/jobs`; production builds fetch `/jobs.json` (exported by CI into `public/` before `npm run build`, then copied to `dist/`). `public/jobs.json` is gitignored and is not committed.
+
+## Production deploy
+
+GitHub Actions workflow `.github/workflows/refresh-jobs.yml` runs ingest + export on a schedule. When `dataChanged` is true it builds the frontend and deploys `dist/` to GitHub Pages. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** once for the repo.
 
 ## Environment
 
@@ -89,6 +93,7 @@ PORT=4000 npm run serve
 | `npm run db:generate` | Generate Drizzle migrations from schema |
 | `npm run db:migrate` | Apply migrations + seed `job_sources` |
 | `npm run ingest` | Run full ingest pipeline |
+| `npm run export:jobs` | Export current jobs list to `public/jobs.json` (gitignored) |
 | `npm run serve` | Start HTTP read API |
 
 ## Notes

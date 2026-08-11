@@ -6,11 +6,11 @@ Define how DragonJobs displays the developer job board list on the home page, in
 
 ## Requirements
 
-### Requirement: Job list displays API-fetched postings
-The system SHALL render a ranked list of job postings fetched from the backend API on the home page.
+### Requirement: Job list displays fetched postings
+The system SHALL render a ranked list of job postings on the home page. In development (`import.meta.env.DEV`), the system SHALL fetch from the backend API at `/api/jobs`. In production builds, the system SHALL fetch from the static file `/jobs.json`.
 
 #### Scenario: Home page shows all jobs
-- **WHEN** the user loads the home page and the API returns jobs
+- **WHEN** the user loads the home page and the jobs endpoint returns jobs
 - **THEN** the system displays every returned job in list order with rank prefixes 1., 2., 3., …
 
 #### Scenario: Job row shows rank
@@ -18,16 +18,24 @@ The system SHALL render a ranked list of job postings fetched from the backend A
 - **THEN** the system displays N as the numeric rank prefix (e.g. "1."), not the job UUID
 
 #### Scenario: Loading state while fetching
-- **WHEN** the home page is loading job data from the API
+- **WHEN** the home page is loading job data
 - **THEN** the system displays a loading indicator instead of the job list
 
 #### Scenario: Error state on fetch failure
-- **WHEN** the API request fails or returns a non-success status
+- **WHEN** the jobs request fails or returns a non-success status
 - **THEN** the system displays an error message and does not show stale hardcoded jobs
 
 #### Scenario: Empty state when no jobs
-- **WHEN** the API returns an empty jobs array
+- **WHEN** the jobs endpoint returns an empty jobs array
 - **THEN** the system displays an empty-state message instead of job rows
+
+#### Scenario: Development uses backend API
+- **WHEN** the app runs under the Vite dev server
+- **THEN** the system requests `/api/jobs` (proxied to the local backend)
+
+#### Scenario: Production uses static jobs.json
+- **WHEN** the app runs as a production build
+- **THEN** the system requests `/jobs.json`
 
 ### Requirement: Job row presents core fields
 Each job row SHALL show the job title, company name, optional badge, and formatted metadata.
