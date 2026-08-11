@@ -3,6 +3,9 @@ dist/
 dev-dist/
 npm-debug.log
 
+# Backend SQLite database
+backend/data/
+
 # Repomix output files
 repomix-output.*
 

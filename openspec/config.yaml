@@ -1,13 +1,12 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  DragonJobs is a static developer job board — a single-page React 19 app with no backend,
+  no routing library, and no data fetching. Job postings are a hardcoded array in App.tsx.
+  Build verification is `npm run build` (tsc + Vite); there is no lint or test setup.
+  Search/filter UI exists but does not yet affect the job list. Links to /job/:id and /login
+  exist but those views are not implemented. Styling is global CSS in src/styles.css (dark theme).
+  PWA via vite-plugin-pwa with service worker enabled in dev.
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
