@@ -2,3 +2,6 @@ node_modules/
 dist/
 dev-dist/
 npm-debug.log
+
+# Repomix output files
+repomix-output.*

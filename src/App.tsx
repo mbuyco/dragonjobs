@@ -47,11 +47,15 @@ function DragonLogo() {
 
 function SearchBar() {
   const [query, setQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<Filter | null>(null)
+  const [activeFilters, setActiveFilters] = useState<Set<Filter>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
 
   function toggleFilter(f: Filter) {
-    setActiveFilter(prev => prev === f ? null : f)
+    setActiveFilters(prev => {
+      const next = new Set(prev)
+      next.has(f) ? next.delete(f) : next.add(f)
+      return next
+    })
     inputRef.current?.focus()
   }
 
@@ -79,9 +83,9 @@ function SearchBar() {
         {FILTERS.map(f => (
           <button
             key={f}
-            className={`filter-pill${activeFilter === f ? ' active' : ''}`}
+            className={`filter-pill${activeFilters.has(f) ? ' active' : ''}`}
             onClick={() => toggleFilter(f)}
-            aria-pressed={activeFilter === f}
+            aria-pressed={activeFilters.has(f)}
           >
             {f}
           </button>
