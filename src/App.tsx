@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface JobDetails {
   stack: string[]
@@ -27,25 +27,12 @@ const jobs: Job[] = [
   { id: 10, title: 'Senior Infrastructure Engineer', company: 'Datadog', details: { stack: ['Go', 'Linux', 'Kubernetes'], postedAt: '3 days ago' } },
 ]
 
-function formatMeta(details: JobDetails): string {
-  const parts = [
-    details.stack.join(' • '),
-    details.salary,
-    details.postedAt,
-  ].filter(Boolean)
-  return parts.join(' • ')
-}
+const FILTERS = ['remote', 'backend', 'frontend', 'fullstack', 'devops', 'ai'] as const
+type Filter = typeof FILTERS[number]
 
-const navLinks = [
-  { label: 'new', href: '/' },
-  { label: 'remote', href: '/browse#remote' },
-  { label: 'backend', href: '/browse#backend' },
-  { label: 'frontend', href: '/browse#frontend' },
-  { label: 'fullstack', href: '/browse#fullstack' },
-  { label: 'devops', href: '/browse#devops' },
-  { label: 'ai', href: '/browse#ai' },
-  { label: 'salary', href: '/browse#salary' },
-]
+function formatMeta(details: JobDetails): string {
+  return [details.stack.join(' • '), details.salary, details.postedAt].filter(Boolean).join(' • ')
+}
 
 function DragonLogo() {
   return (
@@ -58,8 +45,54 @@ function DragonLogo() {
   )
 }
 
+function SearchBar() {
+  const [query, setQuery] = useState('')
+  const [activeFilter, setActiveFilter] = useState<Filter | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function toggleFilter(f: Filter) {
+    setActiveFilter(prev => prev === f ? null : f)
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div className="search-box">
+      <div className="search-input-row">
+        <svg className="search-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" strokeWidth="1.5" />
+          <path d="M13 13l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Search jobs, companies, technologies..."
+          aria-label="Search jobs"
+        />
+        {query && (
+          <button className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">
+            ×
+          </button>
+        )}
+      </div>
+      <div className="search-filters" role="group" aria-label="Filter by category">
+        {FILTERS.map(f => (
+          <button
+            key={f}
+            className={`filter-pill${activeFilter === f ? ' active' : ''}`}
+            onClick={() => toggleFilter(f)}
+            aria-pressed={activeFilter === f}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function App() {
-  const [currentPath, setCurrentPath] = useState(window.location.pathname)
+  const [, setCurrentPath] = useState(window.location.pathname)
 
   useEffect(() => {
     const onPopState = () => setCurrentPath(window.location.pathname)
@@ -75,26 +108,15 @@ export default function App() {
             <DragonLogo />
             <span>DragonJobs</span>
           </a>
-          <nav className="menu">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className={link.href === currentPath ? 'active' : undefined}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-          <div className="right">
-            <a href="/login">login</a>
+          <div className="nav-right">
+            <a href="/login" className="nav-login">login</a>
           </div>
         </div>
       </header>
 
       <section className="search">
         <div className="container">
-          <input placeholder="Search jobs, companies, technologies..." />
+          <SearchBar />
         </div>
       </section>
 

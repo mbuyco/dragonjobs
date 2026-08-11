@@ -61,24 +61,17 @@ header {
     letter-spacing: 1px;
 }
 
-.menu {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    font-size: 14px;
-}
-
-.menu a:hover,
-.menu a.active {
-    color: white;
-}
-
-.right {
+.nav-right {
     margin-left: auto;
     font-size: 13px;
 }
 
-.right a:hover {
+.nav-login {
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.15s;
+}
+
+.nav-login:hover {
     color: white;
 }
 
@@ -87,20 +80,94 @@ header {
 .search {
     background: #181818;
     border-bottom: 1px solid #2c2c2c;
-    padding: 15px 0;
+    padding: 16px 0;
 }
 
-.search input {
-    width: 100%;
-    padding: 12px;
-    border: none;
+.search-box {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.search-input-row {
+    display: flex;
+    align-items: center;
     background: #222;
-    color: white;
     border-radius: 4px;
+    border: 1px solid #333;
+    transition: border-color 0.15s;
 }
 
-.search input:focus {
-    outline: 2px solid #8B0000;
+.search-input-row:focus-within {
+    border-color: #8B0000;
+    outline: none;
+}
+
+.search-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-left: 12px;
+    color: #555;
+}
+
+.search-input-row input {
+    flex: 1;
+    padding: 11px 10px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+.search-input-row input:focus {
+    outline: none;
+}
+
+.search-clear {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0 12px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.search-clear:hover {
+    color: #aaa;
+}
+
+.search-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: inherit;
+    background: #1a1a1a;
+    color: #888;
+    border: 1px solid #333;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.filter-pill:hover {
+    background: #252525;
+    color: #ccc;
+    border-color: #444;
+}
+
+.filter-pill.active {
+    background: #5b0000;
+    color: #fff;
+    border-color: #8B0000;
 }
 
 /* LIST */
@@ -380,10 +447,6 @@ footer {
 }
 
 @media (max-width: 700px) {
-    .menu {
-        display: none;
-    }
-
     .title {
         font-size: 15px;
     }
