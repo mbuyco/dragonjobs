@@ -23,6 +23,7 @@ export interface SourceStats {
 }
 
 export interface IngestSummary {
+  dataChanged: boolean
   ttlDeleted: number
   sources: SourceStats[]
   totals: Omit<SourceStats, 'source'>
@@ -148,7 +149,9 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
     },
   )
 
-  return { ttlDeleted, sources, totals }
+  const dataChanged = ttlDeleted > 0 || sources.some((source) => source.ttlSkipped === 0)
+
+  return { dataChanged, ttlDeleted, sources, totals }
 }
 
 export function logIngestSummary(summary: IngestSummary): void {
@@ -160,6 +163,7 @@ export function logIngestSummary(summary: IngestSummary): void {
   }
   const t = summary.totals
   console.log(
-    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} lookback-skipped=${t.lookbackSkipped} ttl-skipped=${t.ttlSkipped} ttl-deleted=${summary.ttlDeleted}`,
+    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} lookback-skipped=${t.lookbackSkipped} ttl-deleted=${summary.ttlDeleted}`,
   )
+  console.log(`dataChanged=${summary.dataChanged}`)
 }

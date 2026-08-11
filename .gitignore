@@ -11,3 +11,7 @@ repomix-output.*
 
 # Spec folder
 spec/
+
+# TypeScript build info
+*.tsbuildinfo
+**/*.tsbuildinfo

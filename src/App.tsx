@@ -5,6 +5,7 @@ interface JobDetails {
   salary?: string
   postedAt?: string
   badge?: string
+  applyUrl?: string
 }
 
 interface Job {
@@ -154,7 +155,7 @@ export default function App() {
       setLoading(true)
       setError(null)
       try {
-        const res = await fetch('/api/jobs')
+        const res = await fetch('/jobs.json')
         if (!res.ok) throw new Error(`Failed to load jobs (${res.status})`)
         const data: JobsResponse = await res.json()
         if (cancelled) return
