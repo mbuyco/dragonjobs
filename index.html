@@ -1,146 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DragonJobs</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-
-<header>
-<div class="container nav">
-<a href="index.html" class="logo">
-<svg viewBox="0 0 100 100" fill="none" aria-hidden="true">
-<circle cx="50" cy="50" r="45" stroke="white" stroke-width="4"/>
-<path d="M50 22 C42 33 35 38 35 48 C35 57 42 62 50 74 C58 62 65 57 65 48 C65 38 58 33 50 22Z" fill="white"/>
-<path d="M50 50 L18 32 L35 55 L20 78" stroke="white" stroke-width="4" stroke-linecap="round"/>
-<path d="M50 50 L82 32 L65 55 L80 78" stroke="white" stroke-width="4" stroke-linecap="round"/>
-</svg>
-<span>DragonJobs</span>
-</a>
-<nav class="menu">
-<a href="index.html" class="active">new</a>
-<a href="browse.html#remote">remote</a>
-<a href="browse.html#backend">backend</a>
-<a href="browse.html#frontend">frontend</a>
-<a href="browse.html#fullstack">fullstack</a>
-<a href="browse.html#devops">devops</a>
-<a href="browse.html#ai">ai</a>
-<a href="browse.html#salary">salary</a>
-</nav>
-<div class="right"><a href="login.html">login</a></div>
-</div>
-</header>
-
-<section class="search">
-<div class="container">
-<input placeholder="Search jobs, companies, technologies..." />
-</div>
-</section>
-
-<main class="container jobs">
-
-<div class="job">
-<div class="rank">1.</div>
-<div>
-<a href="job.html" class="title">Senior Full Stack Engineer</a>
-<span class="company">@ Stripe</span>
-<span class="badge">Remote</span>
-<div class="meta">React • Node.js • PostgreSQL • $170k–220k • 2 hours ago</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">2.</div>
-<div>
-<a href="job.html" class="title">Staff AI Engineer</a>
-<span class="company">@ Anthropic</span>
-<span class="badge">Hiring</span>
-<div class="meta">Python • LLM • AWS • $250k+ • today</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">3.</div>
-<div>
-<a href="job.html" class="title">Senior Backend Engineer</a>
-<span class="company">@ GitLab</span>
-<span class="badge">Remote</span>
-<div class="meta">Go • Kubernetes • PostgreSQL • 5 hours ago</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">4.</div>
-<div>
-<a href="job.html" class="title">Platform Engineer</a>
-<span class="company">@ Cloudflare</span>
-<div class="meta">Rust • Linux • Networking • yesterday</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">5.</div>
-<div>
-<a href="job.html" class="title">Senior Laravel Developer</a>
-<span class="company">@ Startup</span>
-<span class="badge">Remote</span>
-<div class="meta">Laravel • Vue • MySQL • $80k–120k</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">6.</div>
-<div>
-<a href="job.html" class="title">DevOps Engineer</a>
-<span class="company">@ Netflix</span>
-<div class="meta">Terraform • AWS • Docker • 1 day ago</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">7.</div>
-<div>
-<a href="job.html" class="title">Frontend Engineer</a>
-<span class="company">@ Vercel</span>
-<div class="meta">Next.js • React • TypeScript • today</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">8.</div>
-<div>
-<a href="job.html" class="title">Software Engineer</a>
-<span class="company">@ Linear</span>
-<div class="meta">TypeScript • GraphQL • Remote-first</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">9.</div>
-<div>
-<a href="job.html" class="title">Machine Learning Engineer</a>
-<span class="company">@ OpenAI</span>
-<div class="meta">Python • CUDA • Distributed Systems</div>
-</div>
-</div>
-
-<div class="job">
-<div class="rank">10.</div>
-<div>
-<a href="job.html" class="title">Senior Infrastructure Engineer</a>
-<span class="company">@ Datadog</span>
-<div class="meta">Go • Linux • Kubernetes • 3 days ago</div>
-</div>
-</div>
-
-</main>
-
-<footer>
-DragonJobs • Built for developers • Inspired by classic minimalist communities
-</footer>
-
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DragonJobs</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
