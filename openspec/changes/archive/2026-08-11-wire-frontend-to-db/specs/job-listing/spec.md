@@ -1,12 +1,6 @@
-# job-listing
+## MODIFIED Requirements
 
-## Purpose
-
-Define how DragonJobs displays the developer job board list on the home page, including the job data model and row layout for title, company, badges, and metadata.
-
-## Requirements
-
-### Requirement: Job list displays API-fetched postings
+### Requirement: Job list displays hardcoded postings
 The system SHALL render a ranked list of job postings fetched from the backend API on the home page.
 
 #### Scenario: Home page shows all jobs
@@ -50,6 +44,8 @@ Each job title SHALL link to a job detail path using the job id.
 #### Scenario: Title href uses job id
 - **WHEN** a user views a job title in the list
 - **THEN** the title link target is `/job/{id}` for that job's UUID string id
+
+## ADDED Requirements
 
 ### Requirement: Remotive attribution when Remotive jobs shown
 When the job list includes one or more jobs with source `remotive`, the system SHALL display Remotive attribution with a link to https://remotive.com in the page footer.

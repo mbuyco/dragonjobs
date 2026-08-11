@@ -176,6 +176,16 @@ header {
     padding: 25px 0;
 }
 
+.jobs-status {
+    padding: 20px 0;
+    color: #888;
+    font-size: 0.95rem;
+}
+
+.jobs-error {
+    color: #ff6464;
+}
+
 .job {
     display: grid;
     grid-template-columns: 40px auto;
