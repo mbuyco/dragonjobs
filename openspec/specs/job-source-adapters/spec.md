@@ -70,6 +70,17 @@ The Kalibrr adapter SHALL omit jobs from the returned fetch set when `visibility
 - **WHEN** a Kalibrr job has `company.visible` false or `company_info.hidden` true
 - **THEN** the adapter does not return that job
 
+### Requirement: Kalibrr postedAt uses created_at only
+The Kalibrr adapter SHALL map `postedAt` from `created_at` only and SHALL NOT fall back to `updated_at`.
+
+#### Scenario: Kalibrr created_at present
+- **WHEN** a Kalibrr job has `created_at`
+- **THEN** the adapter sets `postedAt` to that timestamp
+
+#### Scenario: Kalibrr created_at missing
+- **WHEN** a Kalibrr job has no `created_at` (even if `updated_at` is present)
+- **THEN** the adapter omits `postedAt`
+
 ### Requirement: Non-Kalibrr adapters do not probe apply URLs
 Remotive and other non-Kalibrr adapters SHALL map the API-provided apply URL as-is and SHALL NOT perform HTTP liveness checks.
 

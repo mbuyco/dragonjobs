@@ -6,6 +6,7 @@ import { JobIngestDto } from '../dto/job.dto.ts'
 import { kalibrrAdapter } from '../sources/kalibrr.ts'
 import { remotiveAdapter } from '../sources/remotive.ts'
 import { loadIngestQueryFromEnv, type JobSourceAdapter } from '../sources/types.ts'
+import { isWithinLookback } from './lookback.ts'
 
 export interface SourceStats {
   source: string
@@ -16,6 +17,7 @@ export interface SourceStats {
   alreadyPresent: number
   inactiveSkipped: number
   unbuildableUrl: number
+  lookbackSkipped: number
 }
 
 export interface IngestSummary {
@@ -36,6 +38,7 @@ function emptySourceStats(source: string): SourceStats {
     alreadyPresent: 0,
     inactiveSkipped: 0,
     unbuildableUrl: 0,
+    lookbackSkipped: 0,
   }
 }
 
@@ -47,6 +50,7 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
   const query = loadIngestQueryFromEnv()
   const ttlDeleted = deleteJobsSyncedBefore(db, ttlCutoffIso(query.jobTtlHours))
   const sources: SourceStats[] = []
+  const now = new Date()
 
   for (const adapter of adapters) {
     const stats = emptySourceStats(adapter.name)
@@ -64,6 +68,12 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
 
         if (existingIds.has(job.externalId)) {
           stats.alreadyPresent += 1
+          stats.valid += 1
+          continue
+        }
+
+        if (!isWithinLookback(job.postedAt, query.ingestLookbackHours, now)) {
+          stats.lookbackSkipped += 1
           stats.valid += 1
           continue
         }
@@ -108,6 +118,7 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
       acc.alreadyPresent += source.alreadyPresent
       acc.inactiveSkipped += source.inactiveSkipped
       acc.unbuildableUrl += source.unbuildableUrl
+      acc.lookbackSkipped += source.lookbackSkipped
       return acc
     },
     {
@@ -118,6 +129,7 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
       alreadyPresent: 0,
       inactiveSkipped: 0,
       unbuildableUrl: 0,
+      lookbackSkipped: 0,
     },
   )
 
@@ -128,11 +140,11 @@ export function logIngestSummary(summary: IngestSummary): void {
   console.log(`[ttl] deleted=${summary.ttlDeleted}`)
   for (const source of summary.sources) {
     console.log(
-      `[${source.source}] fetched=${source.fetched} valid=${source.valid} skipped=${source.skipped} inserted=${source.inserted} already-present=${source.alreadyPresent} inactive-skipped=${source.inactiveSkipped} unbuildable-url=${source.unbuildableUrl}`,
+      `[${source.source}] fetched=${source.fetched} valid=${source.valid} skipped=${source.skipped} inserted=${source.inserted} already-present=${source.alreadyPresent} inactive-skipped=${source.inactiveSkipped} unbuildable-url=${source.unbuildableUrl} lookback-skipped=${source.lookbackSkipped}`,
     )
   }
   const t = summary.totals
   console.log(
-    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} ttl-deleted=${summary.ttlDeleted}`,
+    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} lookback-skipped=${t.lookbackSkipped} ttl-deleted=${summary.ttlDeleted}`,
   )
 }

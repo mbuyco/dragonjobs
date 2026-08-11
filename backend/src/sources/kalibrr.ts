@@ -184,11 +184,7 @@ function mapKalibrrJob(job: KalibrrJob): JobIngestDto | undefined {
     workArrangement: mapWorkArrangement(job),
     tags: extractTags(job),
     applyUrl,
-    postedAt: job.created_at
-      ? new Date(job.created_at)
-      : job.updated_at
-        ? new Date(job.updated_at)
-        : undefined,
+    postedAt: job.created_at ? new Date(job.created_at) : undefined,
   }
 }
 

@@ -18,15 +18,27 @@ The system SHALL insert a job only when no row exists for `(source, externalId)`
 - **THEN** the system skips insert and leaves the existing row unchanged
 
 ### Requirement: Lifecycle time is based on synced_at not source posting dates
-The system SHALL NOT gate insert eligibility on external source timestamps (`postedAt`, `activation_date`, `publication_date`, or similar). The `synced_at` column SHALL record when the system ingested the job and SHALL be the sole time axis for TTL cleanup.
+The system SHALL gate insert eligibility for new `(source, externalId)` pairs on source `postedAt` relative to `INGEST_LOOKBACK_HOURS`. The `synced_at` column SHALL record when the system ingested the job and SHALL be the sole time axis for TTL cleanup (`JOB_TTL_HOURS`).
+
+#### Scenario: Fresh source posting date on new externalId
+- **WHEN** a fetched job has `postedAt` within the lookback window and `(source, externalId)` is not yet in the database
+- **THEN** the system may insert the job (subject to active and URL-buildability filters)
 
 #### Scenario: Old source posting date on new externalId
-- **WHEN** a fetched job has a source posting date older than 24 hours but `(source, externalId)` is not yet in the database
-- **THEN** the system may insert the job (subject to active and URL-buildability filters)
+- **WHEN** a fetched job has `postedAt` older than the lookback window and `(source, externalId)` is not yet in the database
+- **THEN** the system skips insert and increments a lookback-skipped count in the ingest summary
+
+#### Scenario: Missing postedAt on new externalId
+- **WHEN** a fetched job has no usable `postedAt` and `(source, externalId)` is not yet in the database
+- **THEN** the system skips insert and increments a lookback-skipped count in the ingest summary
 
 #### Scenario: synced_at set on insert
 - **WHEN** a new job is inserted
 - **THEN** the system sets `synced_at` to the current UTC time and does not update `synced_at` on subsequent sync runs
+
+#### Scenario: TTL still uses synced_at only
+- **WHEN** TTL cleanup runs
+- **THEN** the system deletes jobs based on `synced_at` vs `JOB_TTL_HOURS` and does not use `postedAt` for deletion
 
 ### Requirement: Kalibrr inactive listings are skipped at insert time
 The system SHALL NOT insert Kalibrr jobs that fail the source active filter (non-public visibility, past application end date, or hidden company).
@@ -62,8 +74,8 @@ The system SHALL NOT perform HTTP liveness probes on apply URLs for any source d
 - **THEN** the system inserts using the API-provided apply URL without HTTP probing
 
 ### Requirement: Lifecycle metrics appear in the ingest summary
-The system SHALL include counts for jobs skipped as already-present, skipped as inactive, skipped for unbuildable apply URL, inserted, and deleted by TTL in the ingest summary output.
+The system SHALL include counts for jobs skipped as already-present, skipped as inactive, skipped for unbuildable apply URL, skipped by lookback, inserted, and deleted by TTL in the ingest summary output.
 
 #### Scenario: Summary includes lifecycle counts
 - **WHEN** an ingest run completes
-- **THEN** the logged summary includes already-present, inactive-skipped, unbuildable-url, inserted, and ttl-deleted counts (per source and/or totals as implemented)
+- **THEN** the logged summary includes already-present, inactive-skipped, unbuildable-url, lookback-skipped, inserted, and ttl-deleted counts (per source and/or totals as implemented)
