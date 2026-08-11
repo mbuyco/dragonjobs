@@ -1,10 +1,4 @@
-# job-storage
-
-## Purpose
-
-Define SQLite persistence for ingested jobs: schema, DTO validation, migrations, and insert/dedup behavior.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Database schema stores jobs with source dedup
 The system SHALL persist jobs in SQLite with tables `job_sources`, `jobs`, and `job_tags`, enforcing uniqueness on `(source_id, external_id)`. The `jobs` table SHALL NOT include `description`, `raw_payload`, or `is_active` columns. The `jobs` table SHALL include `synced_at` (replacing `fetched_at`) set on insert. Normal sync SHALL insert only when no row exists for that pair; it SHALL NOT refresh mutable fields for an existing pair.
@@ -17,20 +11,6 @@ The system SHALL persist jobs in SQLite with tables `job_sources`, `jobs`, and `
 - **WHEN** a validated `JobIngestDto` with the same `(source, externalId)` already exists during a normal ingest sync
 - **THEN** the system leaves the existing row unchanged including `synced_at`
 
-### Requirement: Job tags are stored relationally
-The system SHALL store job skills/tags in a `job_tags` table linked to the job UUID.
-
-#### Scenario: Tags inserted on upsert
-- **WHEN** a job is upserted with tags `["React", "TypeScript"]`
-- **THEN** the system replaces existing tags for that job with the new tag rows
-
-### Requirement: Job sources are seeded
-The system SHALL seed `job_sources` with rows for `kalibrr` and `remotive` before the first ingest run.
-
-#### Scenario: Sources available on first run
-- **WHEN** the database is migrated and ingest runs for the first time
-- **THEN** `job_sources` contains entries for `kalibrr` (base URL `https://www.kalibrr.com`) and `remotive` (base URL `https://remotive.com`)
-
 ### Requirement: DTO schema validates required fields
 The system SHALL define a `JobIngestDto` Zod schema requiring `source`, `externalId`, `title`, `company`, and `applyUrl`, with optional fields for location, salary, tags, postedAt, and workArrangement. The DTO SHALL NOT include `description` or `rawPayload`.
 
@@ -42,23 +22,7 @@ The system SHALL define a `JobIngestDto` Zod schema requiring `source`, `externa
 - **WHEN** an object is missing `applyUrl`
 - **THEN** `JobIngestDto.parse()` throws a Zod validation error
 
-### Requirement: Local development uses file-based SQLite
-The system SHALL use a SQLite database file for local development, defaulting to `backend/data/dragonjobs.db`, with no external database server required.
-
-#### Scenario: Default database file created
-- **WHEN** the developer runs migrations without setting `DATABASE_URL`
-- **THEN** the system creates or uses `backend/data/dragonjobs.db` and applies the schema
-
-#### Scenario: Custom database path via env
-- **WHEN** `DATABASE_URL` is set to `file:./custom/path/jobs.db`
-- **THEN** the system uses that file path for all database operations
-
-### Requirement: Schema migrations are managed by Drizzle
-The system SHALL use Drizzle ORM for schema definitions and Drizzle Kit for generating and applying SQL migrations.
-
-#### Scenario: Initial migration creates tables
-- **WHEN** the developer runs the migration command
-- **THEN** the `job_sources`, `jobs`, and `job_tags` tables are created with indexes on `posted_at`, `is_active`, and `tag`
+## ADDED Requirements
 
 ### Requirement: TTL cleanup deletes expired jobs
 The system SHALL provide a persistence helper that hard-deletes all jobs with `synced_at` older than a given cutoff timestamp and returns the number of deleted rows.

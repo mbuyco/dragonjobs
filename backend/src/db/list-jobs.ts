@@ -17,11 +17,10 @@ export function listJobs(db: Db): JobListItem[] {
     })
     .from(jobs)
     .innerJoin(jobSources, eq(jobs.sourceId, jobSources.id))
-    .where(eq(jobs.isActive, true))
     .orderBy(
       sql`CASE WHEN ${jobs.postedAt} IS NULL THEN 1 ELSE 0 END`,
       desc(jobs.postedAt),
-      desc(jobs.fetchedAt),
+      desc(jobs.syncedAt),
     )
     .all()
 

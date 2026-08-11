@@ -23,19 +23,16 @@ export const jobs = sqliteTable(
     salaryMax: real('salary_max'),
     currency: text('currency'),
     workArrangement: text('work_arrangement'),
-    description: text('description'),
     applyUrl: text('apply_url').notNull(),
     postedAt: text('posted_at'),
-    fetchedAt: text('fetched_at')
+    syncedAt: text('synced_at')
       .notNull()
       .default(sql`(datetime('now'))`),
-    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-    rawPayload: text('raw_payload').notNull(),
   },
   (table) => [
     uniqueIndex('jobs_source_external_uidx').on(table.sourceId, table.externalId),
     index('idx_jobs_posted_at').on(table.postedAt),
-    index('idx_jobs_is_active').on(table.isActive),
+    index('idx_jobs_synced_at').on(table.syncedAt),
   ],
 )
 

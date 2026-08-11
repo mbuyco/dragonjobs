@@ -1,5 +1,5 @@
 import type { JobIngestDto } from '../dto/job.dto.ts'
-import type { IngestQuery, JobSourceAdapter } from './types.ts'
+import type { IngestQuery, JobSourceAdapter, SourceFetchResult } from './types.ts'
 
 interface RemotiveJob {
   id: number | string
@@ -11,7 +11,6 @@ interface RemotiveJob {
   publication_date?: string
   candidate_required_location?: string
   salary?: string
-  description?: string
   tags?: string[]
 }
 
@@ -33,17 +32,15 @@ function mapRemotiveJob(job: RemotiveJob): JobIngestDto {
     salary: job.salary || undefined,
     workArrangement: 'remote',
     tags,
-    description: job.description,
     applyUrl: job.url ?? '',
     postedAt: job.publication_date ? new Date(job.publication_date) : undefined,
-    rawPayload: job as unknown as Record<string, unknown>,
   }
 }
 
 export const remotiveAdapter: JobSourceAdapter = {
   name: 'remotive',
 
-  async fetch(query: IngestQuery): Promise<JobIngestDto[]> {
+  async fetch(query: IngestQuery): Promise<SourceFetchResult> {
     const results: JobIngestDto[] = []
     const searchTerms = query.keywords.length > 0 ? query.keywords : ['philippines']
 
@@ -72,10 +69,12 @@ export const remotiveAdapter: JobSourceAdapter = {
     }
 
     const seen = new Set<string>()
-    return results.filter((job) => {
+    const jobs = results.filter((job) => {
       if (seen.has(job.externalId)) return false
       seen.add(job.externalId)
       return true
     })
+
+    return { jobs, inactiveSkipped: 0, unbuildableUrl: 0 }
   },
 }

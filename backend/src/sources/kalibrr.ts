@@ -1,26 +1,42 @@
 import type { JobIngestDto, WorkArrangement } from '../dto/job.dto.ts'
-import type { IngestQuery, JobSourceAdapter } from './types.ts'
+import type { IngestQuery, JobSourceAdapter, SourceFetchResult } from './types.ts'
 
 interface KalibrrCompany {
   name?: string
+  code?: string
+  visible?: boolean
+}
+
+interface KalibrrCompanyInfo {
+  code?: string
+  hidden?: boolean
 }
 
 interface KalibrrJob {
   id?: number | string
   name?: string
+  slug?: string
   company?: KalibrrCompany | string
+  company_info?: KalibrrCompanyInfo
   google_location_formatted_address?: string
   location?: string
   salary?: string
   salary_range?: { min?: number; max?: number } | string
   salary_currency?: string
+  salary_maximum?: number
+  maximum_salary?: number
   work_arrangement?: string
   workplace_type?: string
+  is_work_from_home?: boolean
+  is_hybrid?: boolean
   skills?: Array<string | { name?: string }>
+  job_sds_skills?: Array<{ sds_skill?: { name?: string } }>
   function?: string
-  description?: string
   created_at?: string
   updated_at?: string
+  visibility?: string
+  application_end_date?: string
+  apply_redirect_url?: string
   url?: string
   absolute_url?: string
 }
@@ -32,8 +48,13 @@ interface KalibrrSearchResponse {
 
 const PAGE_SIZE = 50
 
-function mapWorkArrangement(value: string | undefined): WorkArrangement {
-  if (!value) return 'unknown'
+function mapWorkArrangement(job: KalibrrJob): WorkArrangement {
+  const value = job.work_arrangement ?? job.workplace_type
+  if (!value) {
+    if (job.is_work_from_home) return 'remote'
+    if (job.is_hybrid) return 'hybrid'
+    return 'unknown'
+  }
   const normalized = value.toLowerCase().replace(/[_-\s]+/g, '')
   if (normalized.includes('remote') || normalized.includes('wfh') || normalized.includes('workfromhome')) {
     return 'remote'
@@ -49,12 +70,20 @@ function companyName(company: KalibrrJob['company']): string {
   return company.name ?? ''
 }
 
+function companyCode(job: KalibrrJob): string | undefined {
+  if (typeof job.company === 'object' && job.company?.code) return job.company.code
+  return job.company_info?.code
+}
+
 function extractTags(job: KalibrrJob): string[] {
   const tags: string[] = []
   if (job.function) tags.push(job.function)
   for (const skill of job.skills ?? []) {
     if (typeof skill === 'string') tags.push(skill)
     else if (skill.name) tags.push(skill.name)
+  }
+  for (const entry of job.job_sds_skills ?? []) {
+    if (entry.sds_skill?.name) tags.push(entry.sds_skill.name)
   }
   return tags
 }
@@ -90,19 +119,57 @@ function extractSalary(job: KalibrrJob): {
       currency,
     }
   }
+  const maxSalary = job.maximum_salary ?? job.salary_maximum
+  if (typeof maxSalary === 'number' && maxSalary > 0) {
+    return { salaryMax: maxSalary, currency }
+  }
   return { currency }
 }
 
-function applyUrl(job: KalibrrJob): string {
-  if (job.absolute_url) return job.absolute_url
-  if (job.url) {
-    return job.url.startsWith('http') ? job.url : `https://www.kalibrr.com${job.url}`
+function isAbsoluteHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
   }
-  if (job.id != null) return `https://www.kalibrr.com/c/jobs/${job.id}`
-  return ''
 }
 
-function mapKalibrrJob(job: KalibrrJob): JobIngestDto {
+function buildApplyUrl(job: KalibrrJob): string | undefined {
+  const redirect = job.apply_redirect_url?.trim()
+  if (redirect && isAbsoluteHttpUrl(redirect)) return redirect
+
+  const code = companyCode(job)
+  const id = job.id
+  const slug = job.slug?.trim()
+  if (code && id != null && slug) {
+    return `https://www.kalibrr.com/c/${code}/jobs/${id}/${slug}`
+  }
+  if (code && id != null) {
+    return `https://www.kalibrr.com/c/${code}/jobs/${id}`
+  }
+
+  return undefined
+}
+
+function isInactiveListing(job: KalibrrJob, now: Date): boolean {
+  if (job.visibility && job.visibility !== 'public') return true
+
+  if (job.application_end_date) {
+    const end = new Date(job.application_end_date)
+    if (!Number.isNaN(end.getTime()) && end < now) return true
+  }
+
+  if (typeof job.company === 'object' && job.company?.visible === false) return true
+  if (job.company_info?.hidden === true) return true
+
+  return false
+}
+
+function mapKalibrrJob(job: KalibrrJob): JobIngestDto | undefined {
+  const applyUrl = buildApplyUrl(job)
+  if (!applyUrl) return undefined
+
   const salary = extractSalary(job)
   return {
     source: 'kalibrr',
@@ -114,16 +181,14 @@ function mapKalibrrJob(job: KalibrrJob): JobIngestDto {
     salaryMin: salary.salaryMin,
     salaryMax: salary.salaryMax,
     currency: salary.currency,
-    workArrangement: mapWorkArrangement(job.work_arrangement ?? job.workplace_type),
+    workArrangement: mapWorkArrangement(job),
     tags: extractTags(job),
-    description: job.description,
-    applyUrl: applyUrl(job),
+    applyUrl,
     postedAt: job.created_at
       ? new Date(job.created_at)
       : job.updated_at
         ? new Date(job.updated_at)
         : undefined,
-    rawPayload: job as unknown as Record<string, unknown>,
   }
 }
 
@@ -151,8 +216,11 @@ async function fetchPage(keyword: string, offset: number): Promise<KalibrrJob[]>
 export const kalibrrAdapter: JobSourceAdapter = {
   name: 'kalibrr',
 
-  async fetch(query: IngestQuery): Promise<JobIngestDto[]> {
+  async fetch(query: IngestQuery): Promise<SourceFetchResult> {
     const results: JobIngestDto[] = []
+    let inactiveSkipped = 0
+    let unbuildableUrl = 0
+    const now = new Date()
 
     for (const keyword of query.keywords) {
       for (let page = 0; page < query.kalibrrMaxPages; page += 1) {
@@ -160,7 +228,16 @@ export const kalibrrAdapter: JobSourceAdapter = {
           const jobs = await fetchPage(keyword, page * PAGE_SIZE)
           if (jobs.length === 0) break
           for (const job of jobs) {
-            results.push(mapKalibrrJob(job))
+            if (isInactiveListing(job, now)) {
+              inactiveSkipped += 1
+              continue
+            }
+            const mapped = mapKalibrrJob(job)
+            if (!mapped) {
+              unbuildableUrl += 1
+              continue
+            }
+            results.push(mapped)
           }
           if (jobs.length < PAGE_SIZE) break
         } catch (error) {
@@ -174,10 +251,12 @@ export const kalibrrAdapter: JobSourceAdapter = {
     }
 
     const seen = new Set<string>()
-    return results.filter((job) => {
+    const jobs = results.filter((job) => {
       if (!job.externalId || seen.has(job.externalId)) return false
       seen.add(job.externalId)
       return true
     })
+
+    return { jobs, inactiveSkipped, unbuildableUrl }
   },
 }

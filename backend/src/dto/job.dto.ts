@@ -15,16 +15,14 @@ export const JobIngestDto = z.object({
   currency: z.string().length(3).optional(),
   workArrangement: WorkArrangement.default('unknown'),
   tags: z.array(z.string()).default([]),
-  description: z.string().optional(),
   applyUrl: z.string().url(),
   postedAt: z.coerce.date().optional(),
-  rawPayload: z.record(z.unknown()),
 })
 export type JobIngestDto = z.infer<typeof JobIngestDto>
 
 export const IngestBatch = z.object({
   source: z.enum(['kalibrr', 'remotive']),
-  fetchedAt: z.coerce.date(),
+  syncedAt: z.coerce.date(),
   jobs: z.array(JobIngestDto),
 })
 export type IngestBatch = z.infer<typeof IngestBatch>

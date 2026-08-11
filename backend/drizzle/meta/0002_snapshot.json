@@ -1,0 +1,257 @@
+{
+  "id": "070dfe3e-38c9-4571-962c-3c8e54815a0a",
+  "prevId": "d5d25f66-7dac-461a-a8ac-23d5f4064ff4",
+  "version": "6",
+  "dialect": "sqlite",
+  "tables": {
+    "job_sources": {
+      "name": "job_sources",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "base_url": {
+          "name": "base_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "job_sources_name_unique": {
+          "name": "job_sources_name_unique",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "job_tags": {
+      "name": "job_tags",
+      "columns": {
+        "job_id": {
+          "name": "job_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tag": {
+          "name": "tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "job_tags_pk": {
+          "name": "job_tags_pk",
+          "columns": [
+            "job_id",
+            "tag"
+          ],
+          "isUnique": true
+        },
+        "idx_job_tags_tag": {
+          "name": "idx_job_tags_tag",
+          "columns": [
+            "tag"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "job_tags_job_id_jobs_id_fk": {
+          "name": "job_tags_job_id_jobs_id_fk",
+          "tableFrom": "job_tags",
+          "tableTo": "jobs",
+          "columnsFrom": [
+            "job_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "jobs": {
+      "name": "jobs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "source_id": {
+          "name": "source_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "company": {
+          "name": "company",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "salary": {
+          "name": "salary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "salary_min": {
+          "name": "salary_min",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "salary_max": {
+          "name": "salary_max",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "work_arrangement": {
+          "name": "work_arrangement",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "apply_url": {
+          "name": "apply_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "posted_at": {
+          "name": "posted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "synced_at": {
+          "name": "synced_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(datetime('now'))"
+        }
+      },
+      "indexes": {
+        "jobs_source_external_uidx": {
+          "name": "jobs_source_external_uidx",
+          "columns": [
+            "source_id",
+            "external_id"
+          ],
+          "isUnique": true
+        },
+        "idx_jobs_posted_at": {
+          "name": "idx_jobs_posted_at",
+          "columns": [
+            "posted_at"
+          ],
+          "isUnique": false
+        },
+        "idx_jobs_synced_at": {
+          "name": "idx_jobs_synced_at",
+          "columns": [
+            "synced_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "jobs_source_id_job_sources_id_fk": {
+          "name": "jobs_source_id_job_sources_id_fk",
+          "tableFrom": "jobs",
+          "tableTo": "job_sources",
+          "columnsFrom": [
+            "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
