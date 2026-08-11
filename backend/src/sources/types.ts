@@ -19,7 +19,7 @@ export interface JobSourceAdapter {
 }
 
 export function loadIngestQueryFromEnv(): IngestQuery {
-  const keywords = (process.env.INGEST_KEYWORDS ?? 'developer,software engineer,devops')
+  const keywords = (process.env.INGEST_KEYWORDS ?? 'developer,software engineer,devops,software,programmer,software architect')
     .split(',')
     .map((keyword) => keyword.trim())
     .filter(Boolean)
