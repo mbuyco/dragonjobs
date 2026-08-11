@@ -1,6 +1,7 @@
 import { ZodError } from 'zod'
 import type { Db } from '../db/client.ts'
 import { getExistingExternalIds, insertJobIfAbsent } from '../db/insert.ts'
+import { getLatestSyncAt } from '../db/sync.ts'
 import { deleteJobsSyncedBefore } from '../db/ttl.ts'
 import { JobIngestDto } from '../dto/job.dto.ts'
 import { kalibrrAdapter } from '../sources/kalibrr.ts'
@@ -18,6 +19,7 @@ export interface SourceStats {
   inactiveSkipped: number
   unbuildableUrl: number
   lookbackSkipped: number
+  ttlSkipped: number
 }
 
 export interface IngestSummary {
@@ -39,6 +41,7 @@ function emptySourceStats(source: string): SourceStats {
     inactiveSkipped: 0,
     unbuildableUrl: 0,
     lookbackSkipped: 0,
+    ttlSkipped: 0,
   }
 }
 
@@ -54,6 +57,16 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
 
   for (const adapter of adapters) {
     const stats = emptySourceStats(adapter.name)
+    const cutoffIso = ttlCutoffIso(query.jobTtlHours)
+    const latestSyncAt = getLatestSyncAt(db, adapter.name)
+
+    if (latestSyncAt && latestSyncAt >= cutoffIso) {
+      stats.ttlSkipped = 1
+      console.log(`[${adapter.name}] skip fetch: within TTL`)
+      sources.push(stats)
+      continue
+    }
+
     const fetchResult = await adapter.fetch(query)
     stats.fetched =
       fetchResult.jobs.length + fetchResult.inactiveSkipped + fetchResult.unbuildableUrl
@@ -119,6 +132,7 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
       acc.inactiveSkipped += source.inactiveSkipped
       acc.unbuildableUrl += source.unbuildableUrl
       acc.lookbackSkipped += source.lookbackSkipped
+      acc.ttlSkipped += source.ttlSkipped
       return acc
     },
     {
@@ -130,6 +144,7 @@ export async function runIngest(db: Db): Promise<IngestSummary> {
       inactiveSkipped: 0,
       unbuildableUrl: 0,
       lookbackSkipped: 0,
+      ttlSkipped: 0,
     },
   )
 
@@ -140,11 +155,11 @@ export function logIngestSummary(summary: IngestSummary): void {
   console.log(`[ttl] deleted=${summary.ttlDeleted}`)
   for (const source of summary.sources) {
     console.log(
-      `[${source.source}] fetched=${source.fetched} valid=${source.valid} skipped=${source.skipped} inserted=${source.inserted} already-present=${source.alreadyPresent} inactive-skipped=${source.inactiveSkipped} unbuildable-url=${source.unbuildableUrl} lookback-skipped=${source.lookbackSkipped}`,
+      `[${source.source}] fetched=${source.fetched} valid=${source.valid} skipped=${source.skipped} inserted=${source.inserted} already-present=${source.alreadyPresent} inactive-skipped=${source.inactiveSkipped} unbuildable-url=${source.unbuildableUrl} lookback-skipped=${source.lookbackSkipped} ttl-skipped=${source.ttlSkipped}`,
     )
   }
   const t = summary.totals
   console.log(
-    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} lookback-skipped=${t.lookbackSkipped} ttl-deleted=${summary.ttlDeleted}`,
+    `[total] fetched=${t.fetched} valid=${t.valid} skipped=${t.skipped} inserted=${t.inserted} already-present=${t.alreadyPresent} inactive-skipped=${t.inactiveSkipped} unbuildable-url=${t.unbuildableUrl} lookback-skipped=${t.lookbackSkipped} ttl-skipped=${t.ttlSkipped} ttl-deleted=${summary.ttlDeleted}`,
   )
 }
