@@ -85,9 +85,23 @@ The [Refresh Jobs](.github/workflows/refresh-jobs.yml) workflow runs about every
 
 1. Migrate DB and run ingest
 2. Export `public/jobs.json`
-3. If data changed, build the frontend and deploy `dist/` to GitHub Pages
+3. If data changed, build the frontend and deploy `dist/` to GitHub Pages and Netlify
 
 Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** once for the repo.
+
+### Netlify (dual deploy)
+
+GitHub Actions also deploys to Netlify via [deploy-netlify-reusable.yml](.github/workflows/deploy-netlify-reusable.yml). Netlify builds are **not** run on Netlify's side — CI uploads `dist/` after building with root base path (`--base /`).
+
+**One-time setup:**
+
+1. Create a site at [netlify.com](https://www.netlify.com) linked to this repo (or an empty site via manual deploy).
+2. Stop Netlify auto-builds (**Site configuration → Build & deploy → Stop builds**) so only GitHub Actions publishes.
+3. Copy the **Site ID** from Site configuration → General.
+4. Create a [Netlify personal access token](https://app.netlify.com/user/applications#personal-access-tokens).
+5. Add GitHub repository secrets: `NETLIFY_AUTH_TOKEN`, `NETLIFY_SITE_ID`.
+
+Push to `main` or run **Deploy On Main** manually to trigger the first Netlify deploy. Verify `/jobs.json` returns 200 and assets load from `/assets/...` (not a subpath prefix).
 
 ## Notes
 

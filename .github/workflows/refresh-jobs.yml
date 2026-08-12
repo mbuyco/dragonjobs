@@ -25,3 +25,9 @@ jobs:
     needs: ingest
     if: needs.ingest.outputs.dataChanged == 'true'
     uses: ./.github/workflows/deploy-pages-reusable.yml
+
+  deploy-netlify:
+    needs: ingest
+    if: needs.ingest.outputs.dataChanged == 'true'
+    uses: ./.github/workflows/deploy-netlify-reusable.yml
+    secrets: inherit

@@ -1,0 +1,47 @@
+name: Deploy Netlify Reusable
+
+on:
+  workflow_call:
+    secrets:
+      NETLIFY_AUTH_TOKEN:
+        required: true
+      NETLIFY_SITE_ID:
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: netlify
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download jobs.json
+        uses: actions/download-artifact@v4
+        with:
+          name: jobs-json
+          path: public
+
+      - name: Install frontend deps
+        run: npm ci
+
+      - name: Build frontend for Netlify
+        run: npm run build -- --base /
+
+      - name: Verify jobs.json in dist
+        run: test -f dist/jobs.json
+
+      - name: Deploy to Netlify
+        run: npx netlify-cli@23.11.1 deploy --prod --dir=dist
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

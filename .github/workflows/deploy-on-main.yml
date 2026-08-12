@@ -21,3 +21,8 @@ jobs:
   deploy:
     needs: prepare
     uses: ./.github/workflows/deploy-pages-reusable.yml
+
+  deploy-netlify:
+    needs: prepare
+    uses: ./.github/workflows/deploy-netlify-reusable.yml
+    secrets: inherit
