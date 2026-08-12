@@ -81,18 +81,18 @@ The system SHALL include counts for jobs skipped as already-present, skipped as 
 - **THEN** the logged summary includes already-present, inactive-skipped, unbuildable-url, lookback-skipped, inserted, and ttl-deleted counts (per source and/or totals as implemented)
 
 ### Requirement: Ingest summary indicates whether data changed
-The system SHALL include a `dataChanged` boolean in the ingest summary that is `true` when at least one source was fetched outside its TTL window or when TTL cleanup deleted rows, and `false` when every source was TTL-skipped and no rows were deleted.
+The system SHALL include a `dataChanged` boolean in the ingest summary that is `true` when at least one job was inserted or when TTL cleanup deleted rows, and `false` when no jobs were inserted and no rows were deleted.
 
-#### Scenario: dataChanged is true when source fetched
-- **WHEN** the ingest run calls `adapter.fetch()` for any source
-- **THEN** `dataChanged` is `true` regardless of whether new jobs were inserted
+#### Scenario: dataChanged is true when jobs inserted
+- **WHEN** the ingest run inserts one or more jobs
+- **THEN** `dataChanged` is `true`
 
 #### Scenario: dataChanged is true when TTL deletes rows
 - **WHEN** TTL cleanup deletes one or more rows
 - **THEN** `dataChanged` is `true`
 
-#### Scenario: dataChanged is false when all sources skipped
-- **WHEN** every configured source is skipped due to TTL and no rows are deleted
+#### Scenario: dataChanged is false when no inserts and no deletes
+- **WHEN** the ingest run inserts zero jobs and TTL cleanup deletes zero rows
 - **THEN** `dataChanged` is `false`
 
 #### Scenario: dataChanged is logged in summary

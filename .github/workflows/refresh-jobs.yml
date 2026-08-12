@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   ingest:
@@ -26,6 +26,19 @@ jobs:
         with:
           node-version: 20
 
+      - name: Ensure data directory
+        run: mkdir -p backend/data
+
+      # Fixed prefix dragonjobs-sqlite-v1; run_id suffix so save always updates
+      # (actions/cache skips post-save on exact key hit).
+      - name: Restore SQLite cache
+        uses: actions/cache/restore@v4
+        with:
+          path: backend/data/dragonjobs.db
+          key: dragonjobs-sqlite-v1-${{ github.run_id }}
+          restore-keys: |
+            dragonjobs-sqlite-v1-
+
       - name: Install backend deps
         run: cd backend && npm ci
 
@@ -38,7 +51,14 @@ jobs:
           INGEST_KEYWORDS: ${{ vars.INGEST_KEYWORDS || 'developer,software engineer,devops' }}
           KALIBRR_MAX_PAGES: ${{ vars.KALIBRR_MAX_PAGES || '5' }}
           REMOTIVE_CATEGORY: ${{ vars.REMOTIVE_CATEGORY || 'software-dev' }}
-          JOB_TTL_HOURS: ${{ vars.JOB_TTL_HOURS || '24' }}
+          INGEST_LOOKBACK_HOURS: ${{ vars.INGEST_LOOKBACK_HOURS || '24' }}
+          JOB_TTL_HOURS: ${{ vars.JOB_TTL_HOURS || '72' }}
+
+      - name: Save SQLite cache
+        uses: actions/cache/save@v4
+        with:
+          path: backend/data/dragonjobs.db
+          key: dragonjobs-sqlite-v1-${{ github.run_id }}
 
       - name: Export jobs
         run: cd backend && npm run export:jobs

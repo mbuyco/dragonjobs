@@ -14,7 +14,6 @@ function writeSummary(summary: IngestSummary) {
     ttlDeleted: summary.ttlDeleted,
     sources: summary.sources.map((source) => ({
       name: source.source,
-      ttlSkipped: source.ttlSkipped > 0,
       inserted: source.inserted,
       alreadyPresent: source.alreadyPresent,
     })),

@@ -1,25 +1,4 @@
-# ci-deploy
-
-## Purpose
-
-Define the automated CI/CD workflow that keeps the job board fresh by running the ingest pipeline on a schedule, exporting jobs to static JSON on the runner, and conditionally deploying the frontend build to GitHub Pages only when data has changed.
-
-## Requirements
-
-### Requirement: GitHub Actions workflow runs ingest on a schedule
-The system SHALL provide a GitHub Actions workflow that triggers on a schedule and on manual dispatch. The workflow SHALL install backend dependencies, run database migrations, execute `npm run ingest`, and export the resulting jobs to `public/jobs.json` on the runner (the file is gitignored and is not committed).
-
-#### Scenario: Scheduled ingest run
-- **WHEN** the schedule triggers the workflow
-- **THEN** the workflow runs `npm run db:migrate`, `npm run ingest`, and `npm run export:jobs` in sequence
-
-#### Scenario: Manual ingest run
-- **WHEN** an operator clicks "Run workflow" in the GitHub Actions UI
-- **THEN** the workflow executes the same ingest and export steps as a scheduled run
-
-#### Scenario: Missing dependencies fail fast
-- **WHEN** the workflow runs and `npm ci` or `npm run db:migrate` fails
-- **THEN** the workflow exits with a non-zero status and does not proceed to ingest or export
+## ADDED Requirements
 
 ### Requirement: Workflow persists SQLite across runs via Actions cache
 The system SHALL restore `backend/data/dragonjobs.db` from GitHub Actions cache using prefix `dragonjobs-sqlite-v1` (restore-keys) after checkout and before migrations when a cache entry exists, ensure `backend/data/` exists for the cache path, and save the database file after ingest under a unique key with that prefix (so each run updates the persisted DB; exact-key cache hits do not skip save). A cache miss SHALL leave the workflow to create a fresh database via migrate + ingest (cold start).
@@ -46,6 +25,8 @@ The system SHALL set workflow environment defaults `INGEST_LOOKBACK_HOURS=24` an
 - **WHEN** the refresh workflow runs ingest without overriding those variables
 - **THEN** lookback is 24 hours and TTL retention is 72 hours
 
+## MODIFIED Requirements
+
 ### Requirement: Deploy is gated on data changes or TTL expiry
 The system SHALL build the frontend and deploy `dist/` to GitHub Pages only when the ingest summary reports `dataChanged` true — that is, when at least one job was inserted or TTL cleanup deleted rows. If no jobs were inserted and no rows were deleted, the workflow SHALL exit without deploying.
 
@@ -64,14 +45,3 @@ The system SHALL build the frontend and deploy `dist/` to GitHub Pages only when
 #### Scenario: Fetch with no row changes skips deploy
 - **WHEN** every source is fetched but no new jobs are inserted and no rows are deleted
 - **THEN** the workflow exits without building or deploying
-
-### Requirement: Workflow deploys dist to GitHub Pages without committing jobs.json
-The system SHALL upload the Vite `dist/` output (including `jobs.json`) as a GitHub Pages artifact and deploy it with the official Pages actions. `public/jobs.json` SHALL remain gitignored and SHALL NOT be committed or pushed to the repository.
-
-#### Scenario: Successful deploy when data changed
-- **WHEN** the deploy gate allows a deploy
-- **THEN** the workflow runs `npm ci` and `npm run build` at the repo root, verifies `dist/jobs.json` exists, uploads the Pages artifact from `dist/`, and deploys with `actions/deploy-pages`
-
-#### Scenario: Data unchanged skips Pages upload
-- **WHEN** `dataChanged` is false
-- **THEN** the workflow does not install frontend deps, build, upload an artifact, or deploy

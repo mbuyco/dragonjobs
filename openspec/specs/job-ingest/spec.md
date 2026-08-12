@@ -7,7 +7,7 @@ Define the CLI ingest pipeline that fetches jobs from configured sources, valida
 ## Requirements
 
 ### Requirement: Ingest CLI runs the full pipeline
-The system SHALL provide a CLI entry point (`npm run ingest`) that orchestrates TTL cleanup, fetch, validate, active filtering (Kalibrr), lookback filtering, insert of new jobs only, for all configured job sources. It SHALL NOT perform apply-URL HTTP probing or mid-run deletion of existing jobs.
+The system SHALL provide a CLI entry point (`npm run ingest`) that orchestrates TTL cleanup, fetch, validate, active filtering (Kalibrr), lookback filtering, insert of new jobs only, for all configured job sources. It SHALL fetch every configured source on each run (no per-source fetch skip). It SHALL NOT perform apply-URL HTTP probing or mid-run deletion of existing jobs.
 
 #### Scenario: Successful ingest run
 - **WHEN** the operator runs `npm run ingest` with a valid `DATABASE_URL`
@@ -16,6 +16,10 @@ The system SHALL provide a CLI entry point (`npm run ingest`) that orchestrates 
 #### Scenario: Invalid database path
 - **WHEN** the operator runs `npm run ingest` with an unwritable or invalid `DATABASE_URL`
 - **THEN** the system exits with a non-zero status and an error message indicating the database cannot be opened or created
+
+#### Scenario: Every source is fetched each run
+- **WHEN** the operator runs `npm run ingest` and jobs for a source already exist with recent `synced_at`
+- **THEN** the system still calls `adapter.fetch()` for that source and does not emit a TTL fetch-skip
 
 ### Requirement: Invalid records are skipped without aborting
 The system SHALL validate each fetched job against the `JobIngestDto` schema and skip invalid records while continuing the batch.
@@ -62,11 +66,15 @@ The system SHALL apply the lookback gate in the ingest pipeline after DTO valida
 - **THEN** the system counts it as already-present and does not increment `lookbackSkipped`
 
 ### Requirement: Ingest summary is logged on completion
-The system SHALL log per-source and total counts at the end of each ingest run, including lookback-skipped counts.
+The system SHALL log per-source and total counts at the end of each ingest run, including lookback-skipped counts. The summary SHALL NOT include `ttlSkipped` / `ttl-skipped` fetch-skip counts.
 
 #### Scenario: Summary output
 - **WHEN** an ingest run completes (success or partial failure)
 - **THEN** the system logs fetched, valid, skipped, inserted, already-present, inactive-skipped, unbuildable-url, and lookback-skipped counts for each source and a combined total
+
+#### Scenario: No ttl-skipped in summary
+- **WHEN** an ingest run completes
+- **THEN** the logged summary and written summary JSON do not include `ttlSkipped` or `ttl-skipped` fields
 
 ### Requirement: Ingest performs TTL cleanup each run
 The system SHALL delete jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 24) as part of every `npm run ingest` execution before source processing, and SHALL reflect deleted counts in the run summary.
@@ -74,22 +82,3 @@ The system SHALL delete jobs whose `synced_at` is older than `JOB_TTL_HOURS` (de
 #### Scenario: Cleanup runs even when sources return no jobs
 - **WHEN** the operator runs `npm run ingest` and every source returns zero jobs
 - **THEN** the system still performs TTL cleanup and logs how many jobs were deleted
-
-### Requirement: Ingest skips source fetch when within TTL
-The system SHALL query the latest `synced_at` for each configured source before calling `adapter.fetch()`. If the source's most recent successful sync is at or after `now - JOB_TTL_HOURS`, the system SHALL skip that source's external fetch, log the skip, and record a `ttlSkipped` count in the ingest summary.
-
-#### Scenario: Source fetch skipped due to TTL
-- **WHEN** the operator runs `npm run ingest` and a source's latest `synced_at` is within `JOB_TTL_HOURS`
-- **THEN** the system does not call `adapter.fetch()` for that source, logs `[<source>] skip fetch: within TTL`, and increments `ttlSkipped` for that source
-
-#### Scenario: Source fetch proceeds when stale
-- **WHEN** the operator runs `npm run ingest` and a source's latest `synced_at` is older than `JOB_TTL_HOURS`
-- **THEN** the system calls `adapter.fetch()` for that source and processes jobs normally
-
-#### Scenario: Source fetch proceeds when no local rows exist
-- **WHEN** the operator runs `npm run ingest` and a source has no rows in the database
-- **THEN** the system calls `adapter.fetch()` for that source because there is no `synced_at` to evaluate
-
-#### Scenario: TTL skip counts appear in summary
-- **WHEN** an ingest run completes with one or more sources skipped due to TTL
-- **THEN** the logged summary includes `ttl-skipped` counts per source and in totals alongside existing lifecycle counts

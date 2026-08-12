@@ -18,15 +18,15 @@ Creates SQLite file at `backend/data/dragonjobs.db` (gitignored).
 npm run ingest
 ```
 
-Each run:
+Each run always fetches every configured source (no per-source fetch skip). `JOB_TTL_HOURS` is retention only; cron paces how often we hit source APIs.
 
-1. **TTL cleanup** — hard-deletes jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 24)
+1. **TTL cleanup** — hard-deletes jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 24 locally)
 2. **Fetch** — Remotive and Kalibrr search APIs (full responses; no API date query params)
 3. **Filter** — Kalibrr skips inactive listings (visibility, expired application window, hidden company) and jobs with no buildable apply URL
 4. **Lookback** — skips new inserts whose source `postedAt` is older than `INGEST_LOOKBACK_HOURS` (or missing); already-present rows are unchanged
 5. **Insert** — append-only: new `(source, externalId)` only; existing rows left unchanged
 
-No HTTP apply-URL probing. Kalibrr apply links are built from API fields (`apply_redirect_url` or company-scoped path).
+`dataChanged` is true only when inserts or TTL deletes occurred. No HTTP apply-URL probing. Kalibrr apply links are built from API fields (`apply_redirect_url` or company-scoped path).
 
 ## API Server
 
@@ -62,7 +62,7 @@ Vite proxies `/api` to `http://localhost:3001`. In DEV the frontend fetches `/ap
 
 ## Production deploy
 
-GitHub Actions workflow `.github/workflows/refresh-jobs.yml` runs ingest + export on a schedule. When `dataChanged` is true it builds the frontend and deploys `dist/` to GitHub Pages. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** once for the repo.
+GitHub Actions workflow `.github/workflows/refresh-jobs.yml` runs ingest + export on a schedule (~every 3h). It restores/saves `backend/data/dragonjobs.db` via Actions cache (prefix `dragonjobs-sqlite-v1`) so SQLite persists across runs. CI defaults: `INGEST_LOOKBACK_HOURS=24`, `JOB_TTL_HOURS=72`. When `dataChanged` is true it builds the frontend and deploys `dist/` to GitHub Pages. Enable **Settings → Pages → Build and deployment → Source: GitHub Actions** once for the repo.
 
 ## Environment
 
@@ -100,4 +100,4 @@ PORT=4000 npm run serve
 
 - Remotive listings require attribution when shown in UI (link + credit).
 - Kalibrr uses undocumented search endpoints; treat as MVP/dev data source.
-- Board lifetime (TTL wipe) is driven by `synced_at` (when we ingested). Insert freshness uses source `postedAt` vs `INGEST_LOOKBACK_HOURS`. Cron ~every 3h for fetch; `JOB_TTL_HOURS` controls full wipe age.
+- Board lifetime (TTL wipe) is driven by `synced_at` (when we ingested). Insert freshness uses source `postedAt` vs `INGEST_LOOKBACK_HOURS`. Cron ~every 3h paces fetch; `JOB_TTL_HOURS` is retention only. Recommended CI pair: lookback 24h / TTL 72h.
