@@ -1,4 +1,4 @@
-# DragonJobs
+# 🐉 DragonJobs
 
 Developer job board — a static React PWA that lists roles ingested from Kalibrr and Remotive. Production is pure static (GitHub Pages); a local Hono/SQLite backend handles ingest and API reads during development.
 
