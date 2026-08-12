@@ -87,17 +87,18 @@ function DragonLogo() {
   )
 }
 
-function SearchBar() {
-  const [query, setQuery] = useState('')
-  const [activeFilters, setActiveFilters] = useState<Set<Filter>>(new Set())
+interface SearchBarProps {
+  query: string
+  onQueryChange: (q: string) => void
+  activeFilters: Set<Filter>
+  onToggleFilter: (f: Filter) => void
+}
+
+function SearchBar({ query, onQueryChange, activeFilters, onToggleFilter }: SearchBarProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   function toggleFilter(f: Filter) {
-    setActiveFilters(prev => {
-      const next = new Set(prev)
-      next.has(f) ? next.delete(f) : next.add(f)
-      return next
-    })
+    onToggleFilter(f)
     inputRef.current?.focus()
   }
 
@@ -111,12 +112,12 @@ function SearchBar() {
         <input
           ref={inputRef}
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => onQueryChange(e.target.value)}
           placeholder="Search jobs, companies, technologies..."
           aria-label="Search jobs"
         />
         {query && (
-          <button className="search-clear" onClick={() => setQuery('')} aria-label="Clear search">
+          <button className="search-clear" onClick={() => onQueryChange('')} aria-label="Clear search">
             ×
           </button>
         )}
@@ -201,11 +202,41 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [hasRemotiveJobs, setHasRemotiveJobs] = useState(false)
   const [page, setPage] = useState(1)
+  const [query, setQuery] = useState('')
+  const [activeFilters, setActiveFilters] = useState<Set<Filter>>(new Set())
 
-  const pageCount = Math.ceil(jobs.length / PAGE_SIZE)
-  const pageJobs = jobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const showStart = jobs.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0
-  const showEnd = Math.min(page * PAGE_SIZE, jobs.length)
+  function handleQueryChange(q: string) {
+    setQuery(q)
+    setPage(1)
+  }
+
+  function handleToggleFilter(f: Filter) {
+    setActiveFilters(prev => {
+      const next = new Set(prev)
+      next.has(f) ? next.delete(f) : next.add(f)
+      return next
+    })
+    setPage(1)
+  }
+
+  const filteredJobs = jobs.filter(job => {
+    const q = query.trim().toLowerCase()
+    const matchesQuery = !q || (
+      job.title.toLowerCase().includes(q) ||
+      job.company.toLowerCase().includes(q) ||
+      job.details.stack.some(t => t.toLowerCase().includes(q))
+    )
+    const matchesFilters = activeFilters.size === 0 || [...activeFilters].some(f => {
+      if (f === 'remote') return job.details.badge === 'Remote'
+      return job.details.stack.some(t => t.toLowerCase().includes(f))
+    })
+    return matchesQuery && matchesFilters
+  })
+
+  const pageCount = Math.ceil(filteredJobs.length / PAGE_SIZE)
+  const pageJobs = filteredJobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const showStart = filteredJobs.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0
+  const showEnd = Math.min(page * PAGE_SIZE, filteredJobs.length)
 
   function handlePageChange(p: number) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -262,7 +293,12 @@ export default function App() {
 
       <section className="search">
         <div className="container">
-          <SearchBar />
+          <SearchBar
+            query={query}
+            onQueryChange={handleQueryChange}
+            activeFilters={activeFilters}
+            onToggleFilter={handleToggleFilter}
+          />
         </div>
       </section>
 
@@ -272,8 +308,11 @@ export default function App() {
         {!loading && !error && jobs.length === 0 && (
           <p className="jobs-status">No jobs found. Run ingest to populate the database.</p>
         )}
-        {!loading && !error && jobs.length > 0 && (
-          <p className="pagination-info">Showing {showStart}–{showEnd} of {jobs.length} jobs</p>
+        {!loading && !error && jobs.length > 0 && filteredJobs.length === 0 && (
+          <p className="jobs-status">No jobs match your search.</p>
+        )}
+        {!loading && !error && filteredJobs.length > 0 && (
+          <p className="pagination-info">Showing {showStart}–{showEnd} of {filteredJobs.length} jobs</p>
         )}
         {!loading && !error && pageJobs.map((job, index) => (
           <div key={job.id} className="job">

@@ -1,10 +1,4 @@
-# search-filter
-
-## Purpose
-
-Define the search and category filter controls shown above the job list, including query input, clear action, and multi-select filter pills for developer job categories.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Search input accepts free-text query
 The system SHALL provide a search field with placeholder text for jobs, companies, and technologies. Typing a query SHALL filter the job list to show only jobs whose title, company, or tags contain the query (case-insensitive).
@@ -31,6 +25,14 @@ The system SHALL offer filter pills for remote, backend, frontend, fullstack, de
 #### Scenario: Focus returns to search input after filter toggle
 - **WHEN** the user toggles a filter pill
 - **THEN** the system returns keyboard focus to the search input
+
+## REMOVED Requirements
+
+### Requirement: Search and filters do not affect the job list yet
+**Reason**: Replaced by active filtering behavior in the modified requirements above.
+**Migration**: No migration needed; the UI-only state is now wired to filter the job list.
+
+## ADDED Requirements
 
 ### Requirement: Filter matching uses OR logic across categories
 The system SHALL show a job if it matches any of the active filter categories (OR). The `remote` filter SHALL match jobs with a "Remote" badge. Other filters SHALL match case-insensitively against any tag in the job's stack.
