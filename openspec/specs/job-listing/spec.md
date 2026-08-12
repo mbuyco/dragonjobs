@@ -7,15 +7,15 @@ Define how DragonJobs displays the developer job board list on the home page, in
 ## Requirements
 
 ### Requirement: Job list displays fetched postings
-The system SHALL render a ranked list of job postings on the home page. In development (`import.meta.env.DEV`), the system SHALL fetch from the backend API at `/api/jobs`. In production builds, the system SHALL fetch from the static file `/jobs.json`.
+The system SHALL render a ranked list of job postings on the home page, paginated by the job-list-pagination capability. In development (`import.meta.env.DEV`), the system SHALL fetch from the backend API at `/api/jobs`. In production builds, the system SHALL fetch from the static file at `${import.meta.env.BASE_URL}jobs.json`. The full fetched array is held in memory; only the current page slice is rendered.
 
-#### Scenario: Home page shows all jobs
+#### Scenario: Home page shows first page of jobs
 - **WHEN** the user loads the home page and the jobs endpoint returns jobs
-- **THEN** the system displays every returned job in list order with rank prefixes 1., 2., 3., …
+- **THEN** the system displays the first 20 jobs in list order with rank prefixes 1., 2., 3., …
 
 #### Scenario: Job row shows rank
-- **WHEN** a job is rendered in the list at position N (1-based)
-- **THEN** the system displays N as the numeric rank prefix (e.g. "1."), not the job UUID
+- **WHEN** a job is rendered in the list at global position N (1-based)
+- **THEN** the system displays N as the numeric rank prefix (e.g. "21." for the first job on page 2), not the job UUID
 
 #### Scenario: Loading state while fetching
 - **WHEN** the home page is loading job data
@@ -35,7 +35,7 @@ The system SHALL render a ranked list of job postings on the home page. In devel
 
 #### Scenario: Production uses static jobs.json
 - **WHEN** the app runs as a production build
-- **THEN** the system requests `/jobs.json`
+- **THEN** the system requests `${import.meta.env.BASE_URL}jobs.json`
 
 ### Requirement: Job row presents core fields
 Each job row SHALL show the job title, company name, optional badge, and formatted metadata.

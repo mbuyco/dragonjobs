@@ -34,6 +34,8 @@ interface JobsResponse {
 const FILTERS = ['remote', 'backend', 'frontend', 'fullstack', 'devops', 'ai'] as const
 type Filter = typeof FILTERS[number]
 
+const PAGE_SIZE = 20
+
 function formatRelativeTime(iso: string): string {
   const date = new Date(iso)
   const diffMs = Date.now() - date.getTime()
@@ -135,12 +137,80 @@ function SearchBar() {
   )
 }
 
+function getPageButtons(page: number, pageCount: number): (number | '…')[] {
+  if (pageCount <= 7) return Array.from({ length: pageCount }, (_, i) => i + 1)
+  const pages: (number | '…')[] = [1]
+  const left = Math.max(2, page - 1)
+  const right = Math.min(pageCount - 1, page + 1)
+  if (left > 2) pages.push('…')
+  for (let i = left; i <= right; i++) pages.push(i)
+  if (right < pageCount - 1) pages.push('…')
+  pages.push(pageCount)
+  return pages
+}
+
+interface PaginationProps {
+  page: number
+  pageCount: number
+  onPageChange: (p: number) => void
+}
+
+function Pagination({ page, pageCount, onPageChange }: PaginationProps) {
+  if (pageCount <= 1) return null
+  const buttons = getPageButtons(page, pageCount)
+  return (
+    <div className="pagination">
+      <button
+        className="pagination-btn"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        aria-label="Previous page"
+      >
+        ← Prev
+      </button>
+      {buttons.map((b, i) =>
+        b === '…' ? (
+          <span key={`ellipsis-${i}`} className="pagination-ellipsis">…</span>
+        ) : (
+          <button
+            key={b}
+            className={`pagination-btn${b === page ? ' active' : ''}`}
+            onClick={() => onPageChange(b)}
+            aria-current={b === page ? 'page' : undefined}
+          >
+            {b}
+          </button>
+        )
+      )}
+      <button
+        className="pagination-btn"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === pageCount}
+        aria-label="Next page"
+      >
+        Next →
+      </button>
+    </div>
+  )
+}
+
 export default function App() {
   const [, setCurrentPath] = useState(window.location.pathname)
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [hasRemotiveJobs, setHasRemotiveJobs] = useState(false)
+  const [page, setPage] = useState(1)
+
+  const pageCount = Math.ceil(jobs.length / PAGE_SIZE)
+  const pageJobs = jobs.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const showStart = jobs.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0
+  const showEnd = Math.min(page * PAGE_SIZE, jobs.length)
+
+  function handlePageChange(p: number) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setPage(p)
+  }
 
   useEffect(() => {
     const onPopState = () => setCurrentPath(window.location.pathname)
@@ -202,9 +272,12 @@ export default function App() {
         {!loading && !error && jobs.length === 0 && (
           <p className="jobs-status">No jobs found. Run ingest to populate the database.</p>
         )}
-        {!loading && !error && jobs.map((job, index) => (
+        {!loading && !error && jobs.length > 0 && (
+          <p className="pagination-info">Showing {showStart}–{showEnd} of {jobs.length} jobs</p>
+        )}
+        {!loading && !error && pageJobs.map((job, index) => (
           <div key={job.id} className="job">
-            <div className="rank">{index + 1}.</div>
+            <div className="rank">{(page - 1) * PAGE_SIZE + index + 1}.</div>
             <div>
               <a target="_blank" href={job.details.applyUrl} className="title">
                 {job.title}
@@ -215,6 +288,9 @@ export default function App() {
             </div>
           </div>
         ))}
+        {!loading && !error && (
+          <Pagination page={page} pageCount={pageCount} onPageChange={handlePageChange} />
+        )}
       </main>
 
       <footer>
