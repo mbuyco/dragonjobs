@@ -2,57 +2,68 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-export default defineConfig({
-  server: {
-    proxy: {
-      '/api': { target: 'http://localhost:3001', changeOrigin: true },
+export default defineConfig(() => {
+  const [owner = '', repo = ''] = (process.env.GITHUB_REPOSITORY ?? '/').split('/')
+  const isProjectPagesBuild =
+    process.env.GITHUB_ACTIONS === 'true' &&
+    Boolean(repo) &&
+    repo.toLowerCase() !== `${owner.toLowerCase()}.github.io`
+  const base = isProjectPagesBuild ? `/${repo}/` : '/'
+
+  return {
+    base,
+    server: {
+      proxy: {
+        '/api': { target: 'http://localhost:3001', changeOrigin: true },
+      },
     },
-  },
-  plugins: [
-    react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'DragonJobs',
-        short_name: 'DragonJobs',
-        description: 'Developer job board — built for developers',
-        theme_color: '#8B0000',
-        background_color: '#111111',
-        display: 'standalone',
-        start_url: '/',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable',
-          },
-        ],
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/api/],
-        runtimeCaching: [
-          {
-            urlPattern: /^\/api\//,
-            handler: 'NetworkOnly',
-          },
-        ],
-      },
-      devOptions: {
-        enabled: true,
-      },
-    }),
-  ],
+    plugins: [
+      react(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+        manifest: {
+          name: 'DragonJobs',
+          short_name: 'DragonJobs',
+          description: 'Developer job board — built for developers',
+          theme_color: '#8B0000',
+          background_color: '#111111',
+          display: 'standalone',
+          start_url: base,
+          scope: base,
+          icons: [
+            {
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable',
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          navigateFallbackDenylist: [/^\/api/],
+          runtimeCaching: [
+            {
+              urlPattern: /^\/api\//,
+              handler: 'NetworkOnly',
+            },
+          ],
+        },
+        devOptions: {
+          enabled: true,
+        },
+      }),
+    ],
+  }
 })
