@@ -57,7 +57,7 @@ jobs:
           INGEST_KEYWORDS: ${{ vars.INGEST_KEYWORDS || 'developer,software engineer,devops' }}
           KALIBRR_MAX_PAGES: ${{ vars.KALIBRR_MAX_PAGES || '5' }}
           REMOTIVE_CATEGORY: ${{ vars.REMOTIVE_CATEGORY || 'software-dev' }}
-          INGEST_LOOKBACK_HOURS: ${{ vars.INGEST_LOOKBACK_HOURS || '24' }}
+          INGEST_LOOKBACK_HOURS: ${{ vars.INGEST_LOOKBACK_HOURS || '168' }}
           JOB_TTL_HOURS: ${{ vars.JOB_TTL_HOURS || '72' }}
 
       - name: Save SQLite cache

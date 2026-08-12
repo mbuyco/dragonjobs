@@ -15,7 +15,7 @@ jobs:
   prepare:
     uses: ./.github/workflows/ingest-jobs-reusable.yml
     with:
-      use_sqlite_cache: false
+      use_sqlite_cache: true
       require_data_changed_for_artifact: false
 
   deploy:
