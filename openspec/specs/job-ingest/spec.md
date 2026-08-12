@@ -40,11 +40,11 @@ The system SHALL accept an optional `INGEST_KEYWORDS` environment variable (comm
 - **THEN** the system passes those keywords to each source adapter that supports keyword search
 
 ### Requirement: Ingest respects configurable lookback hours
-The system SHALL accept an optional `INGEST_LOOKBACK_HOURS` environment variable to control the insert freshness window. When unset, the system SHALL use `JOB_TTL_HOURS` (default 24).
+The system SHALL accept an optional `INGEST_LOOKBACK_HOURS` environment variable to control the insert freshness window. When unset, the system SHALL use `2160` (90 days).
 
-#### Scenario: Lookback defaults to TTL
-- **WHEN** `INGEST_LOOKBACK_HOURS` is not set and `JOB_TTL_HOURS` is `12`
-- **THEN** the system uses a 12-hour lookback for insert eligibility
+#### Scenario: Default lookback
+- **WHEN** `INGEST_LOOKBACK_HOURS` is not set
+- **THEN** the system uses a 2160-hour (90-day) lookback for insert eligibility
 
 #### Scenario: Custom lookback override
 - **WHEN** `INGEST_LOOKBACK_HOURS` is set to `6`
@@ -77,7 +77,7 @@ The system SHALL log per-source and total counts at the end of each ingest run, 
 - **THEN** the logged summary and written summary JSON do not include `ttlSkipped` or `ttl-skipped` fields
 
 ### Requirement: Ingest performs TTL cleanup each run
-The system SHALL delete jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 24) as part of every `npm run ingest` execution before source processing, and SHALL reflect deleted counts in the run summary.
+The system SHALL delete jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 2160 / 90 days) as part of every `npm run ingest` execution before source processing, and SHALL reflect deleted counts in the run summary.
 
 #### Scenario: Cleanup runs even when sources return no jobs
 - **WHEN** the operator runs `npm run ingest` and every source returns zero jobs

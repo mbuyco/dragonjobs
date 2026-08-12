@@ -52,10 +52,10 @@ The system SHALL NOT insert Kalibrr jobs that fail the source active filter (non
 - **THEN** the system does not delete the existing row during this sync run (TTL handles removal)
 
 ### Requirement: Jobs are cleaned up after the TTL window
-The system SHALL hard-delete all jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 24) during each ingest run.
+The system SHALL hard-delete all jobs whose `synced_at` is older than `JOB_TTL_HOURS` (default 2160 / 90 days) during each ingest run.
 
-#### Scenario: Default 24-hour cleanup
-- **WHEN** an ingest run executes and a job has `synced_at` older than 24 hours
+#### Scenario: Default 90-day cleanup
+- **WHEN** an ingest run executes and a job has `synced_at` older than 2160 hours (90 days)
 - **THEN** the system deletes that job and its tags
 
 #### Scenario: Custom TTL

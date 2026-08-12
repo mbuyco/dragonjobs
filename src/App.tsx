@@ -256,7 +256,7 @@ export default function App() {
       setLoading(true)
       setError(null)
       try {
-        const jobsUrl = import.meta.env.DEV ? '/api/jobs' : `${import.meta.env.BASE_URL}jobs.json`
+        const jobsUrl = import.meta.env.DEV ? '/api/jobs' : `${import.meta.env.API_BASE_URL}jobs.json`
         const res = await fetch(jobsUrl)
         if (!res.ok) throw new Error(`Failed to load jobs (${res.status})`)
         const data: JobsResponse = await res.json()

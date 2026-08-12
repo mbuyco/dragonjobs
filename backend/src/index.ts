@@ -14,9 +14,12 @@ function writeSummary(summary: IngestSummary) {
     ttlDeleted: summary.ttlDeleted,
     sources: summary.sources.map((source) => ({
       name: source.source,
+      fetched: source.fetched,
       inserted: source.inserted,
       alreadyPresent: source.alreadyPresent,
+      lookbackSkipped: source.lookbackSkipped,
     })),
+    totals: summary.totals,
   }
   mkdirSync(dirname(SUMMARY_OUTPUT), { recursive: true })
   writeFileSync(SUMMARY_OUTPUT, JSON.stringify(payload, null, 2), 'utf-8')

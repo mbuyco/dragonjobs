@@ -61,12 +61,12 @@ The system SHALL configure deployment concurrency in the reusable deploy workflo
 - **WHEN** a new deploy run starts while another Pages deploy run is in progress
 - **THEN** the newer deploy proceeds and the in-progress deploy run is cancelled
 
-### Requirement: CI ingest uses lookback 24h and retention 72h by default
-The system SHALL set workflow environment defaults `INGEST_LOOKBACK_HOURS=24` and `JOB_TTL_HOURS=72` for the ingest step (repository variables may still override when explicitly set).
+### Requirement: CI ingest uses 90-day lookback and retention by default
+The system SHALL use ingest CLI defaults `INGEST_LOOKBACK_HOURS=2160` and `JOB_TTL_HOURS=2160` (90 days each) when the shared ingest preparation contract runs `npm run ingest` without overriding those variables. Repository variables or environment overrides MAY still replace these values when explicitly set.
 
 #### Scenario: Default CI retention and lookback
 - **WHEN** any caller runs ingest via the shared ingest preparation contract without overriding those variables
-- **THEN** lookback is 24 hours and TTL retention is 72 hours
+- **THEN** lookback is 2160 hours (90 days) and TTL retention is 2160 hours (90 days)
 
 ### Requirement: Refresh-triggered deploy is gated on data changes or TTL expiry
 For refresh-triggered runs, the system SHALL build the frontend and deploy `dist/` to GitHub Pages only when the ingest summary reports `dataChanged` true — that is, when at least one job was inserted or TTL cleanup deleted rows. If no jobs were inserted and no rows were deleted, the refresh workflow SHALL exit without deploying.

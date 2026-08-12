@@ -18,3 +18,5 @@ spec/
 
 # Static jobs cache (CI exports into public/ then builds dist/; not committed)
 public/jobs.json
+
+*.env
