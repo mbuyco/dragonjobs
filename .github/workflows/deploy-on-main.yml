@@ -1,0 +1,23 @@
+name: Deploy On Main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  prepare:
+    uses: ./.github/workflows/ingest-jobs-reusable.yml
+    with:
+      use_sqlite_cache: false
+      require_data_changed_for_artifact: false
+
+  deploy:
+    needs: prepare
+    uses: ./.github/workflows/deploy-pages-reusable.yml

@@ -1,0 +1,92 @@
+name: Ingest Jobs Reusable
+
+on:
+  workflow_call:
+    inputs:
+      use_sqlite_cache:
+        description: Restore and save SQLite cache across runs
+        type: boolean
+        default: false
+      require_data_changed_for_artifact:
+        description: Upload jobs-json artifact only when ingest data changed
+        type: boolean
+        default: false
+    outputs:
+      dataChanged:
+        description: Whether ingest reported dataChanged in summary
+        value: ${{ jobs.ingest.outputs.dataChanged }}
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    outputs:
+      dataChanged: ${{ steps.check.outputs.dataChanged }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ensure data directory
+        run: mkdir -p backend/data
+
+      # Fixed prefix dragonjobs-sqlite-v1; run_id suffix so save always updates
+      # (actions/cache skips post-save on exact key hit).
+      - name: Restore SQLite cache
+        if: inputs.use_sqlite_cache
+        uses: actions/cache/restore@v4
+        with:
+          path: backend/data/dragonjobs.db
+          key: dragonjobs-sqlite-v1-${{ github.run_id }}
+          restore-keys: |
+            dragonjobs-sqlite-v1-
+
+      - name: Install backend deps
+        run: cd backend && npm ci
+
+      - name: Run migrations
+        run: cd backend && npm run db:migrate
+
+      - name: Run ingest
+        run: cd backend && npm run ingest
+        env:
+          INGEST_KEYWORDS: ${{ vars.INGEST_KEYWORDS || 'developer,software engineer,devops' }}
+          KALIBRR_MAX_PAGES: ${{ vars.KALIBRR_MAX_PAGES || '5' }}
+          REMOTIVE_CATEGORY: ${{ vars.REMOTIVE_CATEGORY || 'software-dev' }}
+          INGEST_LOOKBACK_HOURS: ${{ vars.INGEST_LOOKBACK_HOURS || '24' }}
+          JOB_TTL_HOURS: ${{ vars.JOB_TTL_HOURS || '72' }}
+
+      - name: Save SQLite cache
+        if: inputs.use_sqlite_cache
+        uses: actions/cache/save@v4
+        with:
+          path: backend/data/dragonjobs.db
+          key: dragonjobs-sqlite-v1-${{ github.run_id }}
+
+      - name: Export jobs
+        run: cd backend && npm run export:jobs
+
+      - name: Verify summary exists
+        run: test -f backend/data/ingest-summary.json
+
+      - name: Check if data changed
+        id: check
+        run: |
+          dataChanged=$(jq -r '.dataChanged' backend/data/ingest-summary.json)
+          if [ "${{ inputs.require_data_changed_for_artifact }}" != "true" ]; then
+            dataChanged=true
+          fi
+          echo "dataChanged=$dataChanged" >> $GITHUB_OUTPUT
+          echo "Data changed: $dataChanged"
+
+      - name: Upload jobs.json for deploy
+        if: inputs.require_data_changed_for_artifact != true || steps.check.outputs.dataChanged == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jobs-json
+          path: public/jobs.json
+          retention-days: 1
